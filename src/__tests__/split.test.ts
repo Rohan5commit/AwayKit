@@ -38,10 +38,8 @@ describe("Expense Splitting Math", () => {
   })
 })
 
-wallet state handling
 describe("Wallet State", () => {
-  it("validates TRON addresses", () => {
-    // Basic format validation
+  it("validates TRON address format", () => {
     const validAddress = "TJmH123456789012345678901234567890"
     expect(validAddress.startsWith("T")).toBe(true)
     expect(validAddress.length).toBeGreaterThan(30)
