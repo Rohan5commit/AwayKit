@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { calculatePerPersonSplit, calculateSettlements, calculateFundBalance } from "@/lib/trip"
+import { validateAddress, truncateAddress, createExpense } from "@/lib/wallet/helpers"
 import type { SharedExpense, GroupMember } from "@/types"
 
 describe("Expense Splitting Math", () => {
@@ -38,10 +39,25 @@ describe("Expense Splitting Math", () => {
   })
 })
 
-describe("Wallet State", () => {
-  it("validates TRON address format", () => {
-    const validAddress = "TJmH123456789012345678901234567890"
-    expect(validAddress.startsWith("T")).toBe(true)
-    expect(validAddress.length).toBeGreaterThan(30)
+describe("Wallet Helpers", () => {
+  it("validates TRON addresses correctly", () => {
+    expect(validateAddress("TJmH123456789012345678901234567890123")).toBe(true)
+    expect(validateAddress("TJmH123456789012345678901234567890")).toBe(false)
+    expect(validateAddress("0x1234567890abcdef1234567890abcdef12345678")).toBe(false)
+    expect(validateAddress("")).toBe(false)
+  })
+
+  it("truncates addresses correctly", () => {
+    expect(truncateAddress("TJmH123456789012345678901234567890123", 4)).toBe("TJmH...8901")
+    expect(truncateAddress("", 4)).toBe("")
+  })
+
+  it("creates expense with correct per person split", () => {
+    const expense = createExpense("g1", "m1", "Dinner", 100, ["m1", "m2", "m3"])
+    expect(expense.amount).toBe(100)
+    expect(expense.splitAmong).toHaveLength(3)
+    expect(expense.perPerson).toBe(33.33)
+    expect(expense.settled).toBe(false)
+    expect(expense.currency).toBe("USDT")
   })
 })
