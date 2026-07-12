@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/Button"
 import { Textarea } from "@/components/ui/Input"
 import { StatusBadge } from "@/components/ui/StatusBadge"
 import { groupStore } from "@/lib/trip/store"
-import { initQvac, generateChecklist, translatePhrase, answerVenueQuestion, generateSafetyTips, summarizeGroupPlan, understandTicketInfo } from "@/lib/qvac"
-import type { MatchGroup, LocalAiResponse } from "@/types"
+import { initQvac, generateChecklist, translatePhrase, answerVenueQuestion, generateSafetyTips, summarizeGroupPlan } from "@/lib/qvac"
+import type { MatchGroup } from "@/types"
 
 interface ChatMessage {
   id: string
@@ -16,11 +16,11 @@ interface ChatMessage {
 }
 
 const quickPrompts = [
-  { label: "📋 Checklist", prompt: "Generate a matchday checklist for our trip" },
-  { label: "🗣️ Translate", prompt: "How do I say \"Where is the stadium?\" in Spanish?" },
-  { label: "📝 Summarize", prompt: "Summarize the group plan for everyone" },
-  { label: "🛡️ Safety Tips", prompt: "Give me safety tips for the venue" },
-  { label: "❓ Venue Q&A", prompt: "What should we know about the venue?" },
+  { label: "Checklist", prompt: "Generate a matchday checklist for our trip" },
+  { label: "Translate", prompt: "How do I say Where is the stadium in Spanish?" },
+  { label: "Summarize", prompt: "Summarize the group plan for everyone" },
+  { label: "Safety Tips", prompt: "Give me safety tips for the venue" },
+  { label: "Venue Q&A", prompt: "What should we know about the venue?" },
 ]
 
 export default function AIAssistant() {
@@ -80,14 +80,14 @@ export default function AIAssistant() {
         response = await answerVenueQuestion(text, context)
         type = "qa"
       } else {
-        response = `I can help with:
-- 📋 Matchday checklist generation
-- 🗣️ Travel phrase translation
-- 📝 Group plan summarization
-- 🛡️ Safety and venue tips
-- ❓ Venue Q&A
+        response = 'I can help with:
+- Matchday checklist generation
+- Travel phrase translation
+- Group plan summarization
+- Safety and venue tips
+- Venue Q&A
 
-Try one of the quick prompts below, or ask me anything about your matchday trip!"
+Try one of the quick prompts below, or ask me anything about your matchday trip!'
       }
 
       const assistantMsg: ChatMessage = {
@@ -102,7 +102,7 @@ Try one of the quick prompts below, or ask me anything about your matchday trip!
       const errorMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Sorry, I encountered an error processing your request. Please try again.",
+        content: "Sorry, I encountered an error. Please try again.",
         type: "error",
         timestamp: new Date().toISOString(),
       }
@@ -116,16 +116,12 @@ Try one of the quick prompts below, or ask me anything about your matchday trip!
     <div className="min-h-screen py-6">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">🧠 Local AI Assistant</h1>
-          <p className="text-gray-400 mt-1">Powered by QVAC — runs entirely on your device</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Local AI Assistant</h1>
+          <p className="text-gray-400 mt-1">Powered by QVAC - runs entirely on your device</p>
           <div className="mt-2">
-            <StatusBadge variant={aiReady ? "success" : "warning"}>
-              {aiReady ? "QVAC Ready" : "Loading QVAC..."}
-            </StatusBadge>
+            <StatusBadge variant={aiReady ? "success" : "warning"}>{aiReady ? "QVAC Ready" : "Loading QVAC..."}</StatusBadge>
           </div>
         </div>
-
-        {/* Chat Messages */}
         <Card className="h-[50vh] overflow-hidden flex flex-col">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && (
@@ -137,11 +133,7 @@ Try one of the quick prompts below, or ask me anything about your matchday trip!
             )}
             {messages.map(msg => (
               <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] rounded-xl px-4 py-3 ${
-                  msg.role === "user"
-                    ? "bg-pitch-500/20 border border-pitch-500/30"
-                    : "bg-gray-800/50 border border-gray-700/50"
-                }`}>
+                <div className={`max-w-[80%] rounded-xl px-4 py-3 ${msg.role === "user" ? "bg-pitch-500/20 border border-pitch-500/30" : "bg-gray-800/50 border border-gray-700/50"}`}>
                   {msg.role === "assistant" && (
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-sm">🧠</span>
@@ -150,9 +142,6 @@ Try one of the quick prompts below, or ask me anything about your matchday trip!
                     </div>
                   )}
                   <p className="text-sm text-gray-300 whitespace-pre-wrap">{msg.content}</p>
-                  <p className="text-xs text-gray-600 mt-2">
-                    {new Date(msg.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-                  </p>
                 </div>
               </div>
             ))}
@@ -171,40 +160,17 @@ Try one of the quick prompts below, or ask me anything about your matchday trip!
             <div ref={messagesEndRef} />
           </div>
         </Card>
-
-        {/* Quick Prompts */}
         <div className="flex flex-wrap gap-2 justify-center">
           {quickPrompts.map((qp, i) => (
-            <Button key={i} variant="ghost" size="sm" onClick={() => handleSend(qp.prompt)}>
-              {qp.label}
-            </Button>
+            <Button key={i} variant="ghost" size="sm" onClick={() => handleSend(qp.prompt)}>{qp.label}</Button>
           ))}
         </div>
-
-        {/* Input */}
         <div className="flex gap-3">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your trip, translate a phrase, get venue tips..."
-            className="flex-1"
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-          />
-          <Button
-            variant="primary"
-            onClick={() => handleSend()}
-            disabled={!input.trim() || loading}
-            className="self-end"
-          >
-            Send
-          </Button>
+          <Textarea value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about your trip, translate a phrase, get venue tips..." className="flex-1" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend() } }} />
+          <Button variant="primary" onClick={() => handleSend()} disabled={!input.trim() || loading} className="self-end">Send</Button>
         </div>
-
-        <p className="text-center text-xs text-gray-600">
-          🔒 All AI processing happens locally on your device via QVAC. No data leaves your phone.
-        </p>
+        <p className="text-center text-xs text-gray-600">All AI processing happens locally on your device via QVAC. No data leaves your phone.</p>
       </div>
     </div>
   )
 }
-
