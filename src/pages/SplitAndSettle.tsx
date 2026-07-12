@@ -26,6 +26,14 @@ export default function SplitAndSettle() {
   const [addingExpense, setAddingExpense] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Auto-dismiss error after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [error])
+
   useEffect(() => {
     if (!group) {
       navigate("/setup")
@@ -112,8 +120,9 @@ export default function SplitAndSettle() {
         </div>
 
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center">
-            {error}
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-2">✕</button>
           </div>
         )}
 
@@ -176,6 +185,7 @@ export default function SplitAndSettle() {
                   from={fromMember?.name || s.from}
                   to={toMember?.name || s.to}
                   amount={s.amount}
+                  settling={isSettling}
                   onSettle={() => handleSettle(s.from, s.to, s.amount)}
                 />
               )
