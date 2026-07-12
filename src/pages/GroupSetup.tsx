@@ -7,7 +7,6 @@ import { Modal } from "@/components/ui/Modal"
 import { StatusBadge } from "@/components/ui/StatusBadge"
 import { setGroup } from "@/lib/trip/store"
 import { initPears } from "@/lib/pears"
-import { initWallet } from "@/lib/wdk"
 import { demoScenarios } from "@/lib/demo/scenarios"
 import type { MatchGroup } from "@/types"
 
@@ -32,25 +31,16 @@ export default function GroupSetup() {
         id: groupId,
         name: groupName,
         match,
-        members: [
-          { id: "me", name: "You", status: "offline", balance: 500 },
-        ],
+        members: [{ id: "me", name: "You", status: "offline", balance: 500 }],
         tripPlan: destination ? {
-          id: "trip-" + Date.now(),
-          groupId,
-          destination,
-          date: new Date().toISOString().split("T")[0],
-          meetingTime: "14:00",
-          meetupPoints: [],
-          notes: [],
-          checklist: [],
+          id: "trip-" + Date.now(), groupId, destination,
+          date: new Date().toISOString().split("T")[0], meetingTime: "14:00",
+          meetupPoints: [], notes: [], checklist: [],
         } : undefined,
-        fundBalance: 0,
-        currency: "USDT",
+        fundBalance: 0, currency: "USDT",
         createdAt: new Date().toISOString(),
       }
       await initPears({ groupId })
-      await initWallet()
       setGroup(newGroup)
       navigate("/trip")
     } catch (err) {
@@ -66,7 +56,6 @@ export default function GroupSetup() {
     setError(null)
     try {
       await initPears({ groupId: inviteCode })
-      await initWallet()
       const scenario = demoScenarios[0]
       setGroup(scenario.group)
       navigate("/trip")
@@ -83,7 +72,6 @@ export default function GroupSetup() {
     try {
       const scenario = demoScenarios[index]
       await initPears({ groupId: scenario.group.id })
-      await initWallet()
       setGroup(scenario.group)
       navigate("/trip")
     } catch (err) {
@@ -100,13 +88,12 @@ export default function GroupSetup() {
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Matchday Setup</h1>
           <p className="text-gray-400 mt-2">Create a group or join friends for matchday</p>
         </div>
-
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center">
-            {error}
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-2">✕</button>
           </div>
         )}
-
         <Card className="border-pitch-500/30 bg-pitch-500/5">
           <div className="flex items-center justify-between">
             <div>
@@ -116,12 +103,10 @@ export default function GroupSetup() {
             <Button variant="primary" size="sm" onClick={() => setShowDemo(true)} disabled={loading}>Try</Button>
           </div>
         </Card>
-
         <div className="grid grid-cols-2 gap-4">
           <Button variant={mode === "new" ? "primary" : "ghost"} fullWidth onClick={() => setMode(mode === "new" ? null : "new")} icon="➕" disabled={loading}>Create Group</Button>
           <Button variant={mode === "join" ? "primary" : "ghost"} fullWidth onClick={() => setMode(mode === "join" ? null : "join")} icon="🔗" disabled={loading}>Join Group</Button>
         </div>
-
         {mode === "new" && (
           <Card>
             <CardTitle>Create Matchday Group</CardTitle>
@@ -129,35 +114,24 @@ export default function GroupSetup() {
               <Input label="Group Name" placeholder="e.g. Barcelona Away End" value={groupName} onChange={(e) => setGroupName(e.target.value)} icon="👥" />
               <Input label="Match" placeholder="e.g. Real Madrid vs Barcelona" value={match} onChange={(e) => setMatch(e.target.value)} icon="⚽" />
               <Input label="Destination (optional)" placeholder="e.g. Santiago Bernabeu, Madrid" value={destination} onChange={(e) => setDestination(e.target.value)} icon="📍" />
-              <Button variant="primary" fullWidth onClick={handleCreate} disabled={!groupName || !match || loading} loading={loading}>
-                {loading ? "Creating..." : "Create Group & Plan Trip"}
-              </Button>
+              <Button variant="primary" fullWidth onClick={handleCreate} disabled={!groupName || !match || loading} loading={loading}>{loading ? "Creating..." : "Create Group & Plan Trip"}</Button>
             </CardContent>
           </Card>
         )}
-
         {mode === "join" && (
           <Card>
             <CardTitle>Join Existing Group</CardTitle>
             <CardContent className="space-y-4">
               <Input label="Invite Code" placeholder="Enter group invite code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} icon="🔑" />
-              <Button variant="secondary" fullWidth onClick={handleJoin} disabled={!inviteCode || loading} loading={loading}>
-                {loading ? "Joining..." : "Join via P2P"}
-              </Button>
+              <Button variant="secondary" fullWidth onClick={handleJoin} disabled={!inviteCode || loading} loading={loading}>{loading ? "Joining..." : "Join via P2P"}</Button>
               <p className="text-xs text-gray-500 text-center">In production, this connects peer-to-peer via Pears</p>
             </CardContent>
           </Card>
         )}
-
         <Modal isOpen={showDemo} onClose={() => !loading && setShowDemo(false)} title="Choose a Demo Scenario">
           <div className="space-y-3">
             {demoScenarios.map((scenario, i) => (
-              <button
-                key={i}
-                onClick={() => handleDemoSelect(i)}
-                disabled={loading}
-                className={`w-full text-left p-4 bg-gray-800/50 border border-gray-700/50 rounded-xl transition-all ${loading ? "opacity-50 cursor-not-allowed" : "hover:border-pitch-500/50 hover:bg-gray-800"}`}
-              >
+              <button key={i} onClick={() => handleDemoSelect(i)} disabled={loading} className={`w-full text-left p-4 bg-gray-800/50 border border-gray-700/50 rounded-xl transition-all ${loading ? "opacity-50 cursor-not-allowed" : "hover:border-pitch-500/50 hover:bg-gray-800"}`}>
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{scenario.icon}</span>
                   <div>
