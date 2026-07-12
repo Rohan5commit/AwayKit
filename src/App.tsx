@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
@@ -8,8 +8,16 @@ import TripBoard from "./pages/TripBoard"
 import AIAssistant from "./pages/AIAssistant"
 import SplitAndSettle from "./pages/SplitAndSettle"
 import Architecture from "./pages/Architecture"
+import { initWallet } from "@/lib/wdk"
+import { initQvac } from "@/lib/qvac"
 
 export default function App() {
+  useEffect(() => {
+    // Initialize wallet and AI at app level
+    initWallet().catch(console.warn)
+    initQvac().catch(console.warn)
+  }, [])
+
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col bg-gray-950">
@@ -30,4 +38,3 @@ export default function App() {
     </BrowserRouter>
   )
 }
-
