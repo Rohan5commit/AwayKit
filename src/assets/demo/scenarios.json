@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "scenarios": [
+    {
+      "id": "stadium-away",
+      "name": "Stadium Away Day",
+      "description": "4 friends traveling to an away match",
+      "icon": "⚽"
+    },
+    {
+      "id": "fan-meetup",
+      "name": "Away Fan Meetup",
+      "description": "Away fans gathering in a new city",
+      "icon": "🏟️"
+    },
+    {
+      "id": "watch-party",
+      "name": "Watch Party Fund",
+      "description": "Organizer handling shared expenses",
+      "icon": "📺"
+    }
+  ]
+}
