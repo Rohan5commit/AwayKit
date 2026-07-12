@@ -2,14 +2,25 @@ import type { MatchGroup, GroupMember, SharedExpense, GroupMessage } from "@/typ
 
 type Listener<T> = (state: T) => void
 
-function createStore<T>(initial: T) {
+function createStore<T>(initial: T, storageKey?: string) {
   let state = initial
   const listeners = new Set<Listener<T>>()
   
+  // Load from localStorage if key provided
+  if (storageKey) {
+    try {
+      const stored = localStorage.getItem(storageKey)
+      if (stored) state = JSON.parse(stored)
+    } catch { /* ignore */ }
+  }
+
   return {
     get: () => state,
     set: (next: T) => {
       state = next
+      if (storageKey) {
+        try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch { /* ignore */ }
+      }
       listeners.forEach(fn => fn(state))
     },
     subscribe: (fn: Listener<T>) => {
@@ -19,26 +30,15 @@ function createStore<T>(initial: T) {
   }
 }
 
-export const groupStore = createStore<MatchGroup | null>(null)
-export const expensesStore = createStore<SharedExpense[]>([])
-export const messagesStore = createStore<GroupMessage[]>([])
+export const groupStore = createStore<MatchGroup | null>(null, "awaykit_group")
+export const expensesStore = createStore<SharedExpense[]>([], "awaykit_expenses")
+export const messagesStore = createStore<GroupMessage[]>([], "awaykit_messages")
 
 export function setGroup(group: MatchGroup) {
   groupStore.set(group)
-  localStorage.setItem("awaykit_group", JSON.stringify(group))
 }
 
 export function getStoredGroup(): MatchGroup | null {
-  const stored = localStorage.getItem("awaykit_group")
-  if (stored) {
-    try {
-      const group = JSON.parse(stored)
-      groupStore.set(group)
-      return group
-    } catch {
-      return null
-    }
-  }
   return groupStore.get()
 }
 
@@ -80,5 +80,6 @@ export function resetStores() {
   expensesStore.set([])
   messagesStore.set([])
   localStorage.removeItem("awaykit_group")
+  localStorage.removeItem("awaykit_expenses")
+  localStorage.removeItem("awaykit_messages")
 }
-
