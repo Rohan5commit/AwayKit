@@ -22,11 +22,9 @@ export function getMemberBalances(
   members.forEach(m => balances.set(m.id, 0))
   
   expenses.forEach(exp => {
-    // Payer is owed money
     const currentPayerBalance = balances.get(exp.paidBy) || 0
     balances.set(exp.paidBy, currentPayerBalance + exp.amount)
     
-    // Each person in split owes their share
     exp.splitAmong.forEach(memberId => {
       if (memberId !== exp.paidBy) {
         const currentBalance = balances.get(memberId) || 0
@@ -54,7 +52,6 @@ export function calculateSettlements(
     }
   })
   
-  // Sort to minimize transactions
   debtors.sort((a, b) => b.amount - a.amount)
   creditors.sort((a, b) => b.amount - a.amount)
   
@@ -63,7 +60,7 @@ export function calculateSettlements(
   let i = 0, j = 0
   while (i < debtors.length && j < creditors.length) {
     const amount = Math.min(debtors[i].amount, creditors[j].amount)
-    if (amount > 0.01) { // Ignore micro differences
+    if (amount > 0.01) {
       settlements.push({
         from: debtors[i].id,
         to: creditors[j].id,
@@ -79,14 +76,6 @@ export function calculateSettlements(
   return settlements
 }
 
-export function getStatusColor(status: GroupMember["status"]): string {
-  switch (status) {
-    case "arrived": return "text-green-400"
-    case "traveling": return "text-yellow-400"
-    case "offline": return "text-gray-500"
-  }
-}
-
 export function getStatusIcon(status: GroupMember["status"]): string {
   switch (status) {
     case "arrived": return "✅"
@@ -98,20 +87,3 @@ export function getStatusIcon(status: GroupMember["status"]): string {
 export function formatCurrency(amount: number, currency: string = "USDT"): string {
   return `${amount.toFixed(2)} ${currency}`
 }
-
-export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  })
-}
-
-export function formatTime(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
