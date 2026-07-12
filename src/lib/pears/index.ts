@@ -1,5 +1,6 @@
 import type { PeerSyncEvent } from "@/types"
 
+let pearsInitialized = false
 let swarm: any = null
 let corestore: any = null
 let connectedPeers: Map<string, any> = new Map()
@@ -25,6 +26,7 @@ function uint8ArrayToHex(arr: Uint8Array): string {
 }
 
 export async function initPears(config: PearsConfig): Promise<void> {
+  if (pearsInitialized) return
   currentConfig = config
   try {
     const { Hyperswarm } = await import("@pear-js/hyperswarm")
@@ -49,7 +51,8 @@ export async function initPears(config: PearsConfig): Promise<void> {
       socket.on("close", () => { connectedPeers.delete(peerId); config.onPeerDisconnect?.(peerId) })
     })
     await swarm.listen()
-  } catch (err) { console.warn("[Pears] Demo mode:", err) }
+    pearsInitialized = true
+  } catch (err) { console.warn("[Pears] Demo mode:", err); pearsInitialized = true }
 }
 
 export function broadcastEvent(event: PeerSyncEvent): void {
@@ -75,5 +78,5 @@ export function destroyPears(): void {
   connectedPeers.forEach((s) => { try { s.close() } catch (e) {} })
   connectedPeers.clear()
   swarm?.destroy?.()
-  corestore = null; swarm = null; currentConfig = null; eventListeners = []
+  corestore = null; swarm = null; currentConfig = null; eventListeners = []; pearsInitialized = false
 }
