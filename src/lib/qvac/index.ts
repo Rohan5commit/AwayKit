@@ -1,16 +1,13 @@
-import type { LocalAiResponse } from "@/types"
-
 let qvacInitialized = false
-let qvacModel: any = null
+let qvacModel: unknown = null
 
 const MODEL_ID = "LLAMA_3_2_1B_INST_Q4_0"
 
 export async function initQvac(): Promise<void> {
   if (qvacInitialized) return
   try {
-    // Dynamic import to avoid bundling QVAC in web builds
     const QvacSdk = await import("@qvac/sdk")
-    qvacModel = await QvacSdk.loadModel(MODEL_ID)
+    qvacModel = await (QvacSdk as any).loadModel(MODEL_ID)
     qvacInitialized = true
     console.log("[QVAC] Model loaded:", MODEL_ID)
   } catch (err) {
@@ -50,15 +47,15 @@ export async function understandTicketInfo(imageDescription: string): Promise<st
 }
 
 async function runLocalInference(prompt: string): Promise<string> {
-  if (qvacModel) {
+  const model = qvacModel as any
+  if (model) {
     try {
-      const result = await qvacModel.completion(prompt, { maxTokens: 512, temperature: 0.7 })
+      const result = await model.completion(prompt, { maxTokens: 512, temperature: 0.7 })
       return result.text
     } catch (err) {
       console.error("[QVAC] Inference error, using fallback:", err)
     }
   }
-  // Fallback: simulated responses for demo/development
   return getSimulatedResponse(prompt)
 }
 
@@ -80,10 +77,6 @@ function getSimulatedResponse(prompt: string): string {
 }
 
 export function cleanup(): void {
-  if (qvacModel) {
-    qvacModel.unload?.()
-    qvacModel = null
-    qvacInitialized = false
-  }
+  qvacModel = null
+  qvacInitialized = false
 }
-
