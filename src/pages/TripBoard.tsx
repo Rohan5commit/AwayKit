@@ -18,6 +18,8 @@ export default function TripBoard() {
   const [messages, setMessages] = useState(messagesStore.get())
   const [showTopUp, setShowTopUp] = useState(false)
   const [topUpAmount, setTopUpAmount] = useState("")
+  const [topUpLoading, setTopUpLoading] = useState(false)
+  const [topUpError, setTopUpError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"board" | "chat" | "checklist">("board")
 
   useEffect(() => {
@@ -36,14 +38,33 @@ export default function TripBoard() {
     return () => { unsubGroup(); unsubExpenses(); unsubMessages() }
   }, [])
 
+  // Auto-dismiss topUp error
+  useEffect(() => {
+    if (topUpError) {
+      const timer = setTimeout(() => setTopUpError(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [topUpError])
+
   const handleTopUp = async () => {
     if (!topUpAmount || !group) return
     const amount = parseFloat(topUpAmount)
-    if (isNaN(amount) || amount <= 0) return
-    await topUpTripFund(group.id, amount)
-    setGroup({ ...group, fundBalance: group.fundBalance + amount })
-    setShowTopUp(false)
-    setTopUpAmount("")
+    if (isNaN(amount) || amount <= 0) {
+      setTopUpError("Please enter a valid amount")
+      return
+    }
+    setTopUpLoading(true)
+    setTopUpError(null)
+    try {
+      await topUpTripFund(group.id, amount)
+      setGroup({ ...group, fundBalance: group.fundBalance + amount })
+      setShowTopUp(false)
+      setTopUpAmount("")
+    } catch (err) {
+      setTopUpError("Top-up failed. Please try again.")
+    } finally {
+      setTopUpLoading(false)
+    }
   }
 
   if (!group) {
@@ -71,9 +92,15 @@ export default function TripBoard() {
               <p className="text-sm text-gray-400">Shared Trip Fund</p>
               <p className="text-3xl font-bold text-white mt-1">{formatCurrency(group.fundBalance, group.currency)}</p>
             </div>
-            <Button variant="success" onClick={() => setShowTopUp(true)} icon="💰">Top Up</Button>
+            <Button variant="success" onClick={() => setShowTopUp(true)} icon="💰" disabled={topUpLoading}>Top Up</Button>
           </div>
         </Card>
+
+        {topUpError && (
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center">
+            {topUpError}
+          </div>
+        )}
 
         <div className="flex gap-2 bg-gray-900/50 p-1 rounded-xl">
           {(["board", "chat", "checklist"] as const).map(tab => (
@@ -204,11 +231,13 @@ export default function TripBoard() {
           <Button variant="ghost" fullWidth icon="🔄">Sync Status</Button>
         </div>
 
-        <Modal isOpen={showTopUp} onClose={() => setShowTopUp(false)} title="Top Up Trip Fund">
+        <Modal isOpen={showTopUp} onClose={() => !topUpLoading && setShowTopUp(false)} title="Top Up Trip Fund">
           <div className="space-y-4">
             <Input label="Amount (USDT)" type="number" placeholder="Enter amount" value={topUpAmount} onChange={(e) => setTopUpAmount(e.target.value)} icon="💰" />
             <p className="text-xs text-gray-500">Current balance: {formatCurrency(group.fundBalance, group.currency)}</p>
-            <Button variant="success" fullWidth onClick={handleTopUp} disabled={!topUpAmount}>Confirm Top Up</Button>
+            <Button variant="success" fullWidth onClick={handleTopUp} disabled={!topUpAmount || topUpLoading} loading={topUpLoading}>
+              {topUpLoading ? "Processing..." : "Confirm Top Up"}
+            </Button>
           </div>
         </Modal>
       </div>
