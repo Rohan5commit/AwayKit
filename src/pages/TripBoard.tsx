@@ -177,13 +177,11 @@ export default function TripBoard() {
           </Card>
         )}
 
-        {activeTab === "checklist" && group.tripPlan && (
+        {activeTab === "checklist" && (
           <Card>
             <CardTitle>Matchday Checklist</CardTitle>
             <CardContent className="space-y-2 mt-4">
-              {group.tripPlan.checklist.length === 0 ? (
-                <p className="text-gray-500 text-sm text-center py-8">No checklist items yet</p>
-              ) : (
+              {group.tripPlan && group.tripPlan.checklist.length > 0 ? (
                 group.tripPlan.checklist.map(item => (
                   <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-xl">
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${item.checked ? "bg-pitch-500 border-pitch-500" : "border-gray-600"}`}>
@@ -192,6 +190,8 @@ export default function TripBoard() {
                     <span className={`text-sm ${item.checked ? "text-gray-500 line-through" : "text-gray-300"}`}>{item.text}</span>
                   </div>
                 ))
+              ) : (
+                <p className="text-gray-500 text-sm text-center py-8">No checklist items yet. Create a trip plan to add items.</p>
               )}
             </CardContent>
           </Card>
