@@ -8,6 +8,7 @@ interface SettlementCardProps {
   amount: number
   currency?: string
   settled?: boolean
+  settling?: boolean
   onSettle?: () => void
 }
 
@@ -17,6 +18,7 @@ export function SettlementCard({
   amount,
   currency = "USDT",
   settled = false,
+  settling = false,
   onSettle,
 }: SettlementCardProps) {
   return (
@@ -36,8 +38,8 @@ export function SettlementCard({
           {settled ? (
             <StatusBadge variant="success">Done</StatusBadge>
           ) : onSettle ? (
-            <Button variant="primary" size="sm" onClick={onSettle}>
-              Settle
+            <Button variant="primary" size="sm" onClick={onSettle} disabled={settling} loading={settling}>
+              {settling ? "Sending..." : "Settle"}
             </Button>
           ) : (
             <StatusBadge variant="warning">Pending</StatusBadge>
@@ -47,4 +49,3 @@ export function SettlementCard({
     </div>
   )
 }
-
