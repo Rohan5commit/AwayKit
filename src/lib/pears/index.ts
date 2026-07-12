@@ -1,11 +1,7 @@
-import type { MatchGroup, GroupMember, PeerSyncEvent, GroupMessage } from "@/types"
-
-// Pears P2P sync layer for peer-to-peer group coordination
-// Uses Hypercore for data storage, Hyperswarm for peer discovery
+import type { PeerSyncEvent } from "@/types"
 
 let swarm: any = null
 let corestore: any = null
-let groupCore: any = null
 let connectedPeers: Map<string, any> = new Map()
 let eventListeners: ((event: PeerSyncEvent) => void)[] = []
 
@@ -20,28 +16,42 @@ export interface PearsConfig {
 
 let currentConfig: PearsConfig | null = null
 
+// Helper: convert string to Uint8Array (browser-safe alternative to Buffer.from)
+function stringToUint8Array(str: string): Uint8Array {
+  const encoder = new TextEncoder()
+  return encoder.encode(str)
+}
+
+function uint8ArrayToHex(arr: Uint8Array): string {
+  return Array.from(arr).map(b => b.toString(16).padStart(2, "0")).join("")
+}
+
 export async function initPears(config: PearsConfig): Promise<void> {
   currentConfig = config
   try {
-    // Dynamic import for Pears SDK
     const { Hyperswarm } = await import("@pear-js/hyperswarm")
     const { Corestore } = await import("@pear-js/core")
     
     corestore = new Corestore()
     swarm = new Hyperswarm()
     
-    // Join a topic based on groupId for group-specific sync
-    const topic = Buffer.from(config.groupId.slice(0, 64).padEnd(64, "0"), "hex")
+    // Create topic from groupId (browser-safe)
+    const topicUint8 = stringToUint8Array(config.groupId.padEnd(64, "0").slice(0, 64))
+    const topic = new Uint8Array(32)
+    topicUint8.forEach((byte, i) => { if (i < 32) topic[i] = byte })
+    
     swarm.join(topic)
     
     swarm.on("connection", (socket: any, peerInfo: any) => {
-      const peerId = peerInfo.publicKey?.toString("hex") || "unknown"
+      const peerId = peerInfo?.publicKey ? uint8ArrayToHex(new Uint8Array(peerInfo.publicKey)) : "peer-" + Math.random().toString(36).slice(2, 8)
       connectedPeers.set(peerId, socket)
       config.onPeerConnect?.(peerId)
       
-      socket.on("data", (data: Buffer) => {
+      socket.on("data", (data: Uint8Array) => {
         try {
-          const event: PeerSyncEvent = JSON.parse(data.toString())
+          const decoder = new TextDecoder()
+          const text = decoder.decode(data)
+          const event: PeerSyncEvent = JSON.parse(text)
           config.onEvent?.(event)
           eventListeners.forEach(fn => fn(event))
         } catch (e) {
@@ -63,7 +73,8 @@ export async function initPears(config: PearsConfig): Promise<void> {
 }
 
 export function broadcastEvent(event: PeerSyncEvent): void {
-  const data = Buffer.from(JSON.stringify(event))
+  const encoder = new TextEncoder()
+  const data = encoder.encode(JSON.stringify(event))
   connectedPeers.forEach((socket) => {
     try {
       socket.write(data)
@@ -76,7 +87,8 @@ export function broadcastEvent(event: PeerSyncEvent): void {
 export function sendToPeer(peerId: string, event: PeerSyncEvent): void {
   const socket = connectedPeers.get(peerId)
   if (socket) {
-    const data = Buffer.from(JSON.stringify(event))
+    const encoder = new TextEncoder()
+    const data = encoder.encode(JSON.stringify(event))
     socket.write(data)
   }
 }
@@ -115,7 +127,6 @@ let localState: Record<string, any> = {}
 
 export function setLocalState(key: string, value: any): void {
   localState[key] = value
-  // Persist to localStorage for offline access
   try {
     localStorage.setItem(`pears_${key}`, JSON.stringify(value))
   } catch (e) {
@@ -148,10 +159,8 @@ export function destroyPears(): void {
   connectedPeers.clear()
   swarm?.destroy?.()
   corestore = null
-  groupCore = null
   swarm = null
   currentConfig = null
   eventListeners = []
   localState = {}
 }
-
